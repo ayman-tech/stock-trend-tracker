@@ -11,10 +11,7 @@ import datetime
 import json
 import sys
 
-username = ""
-password = ""
-old_code = ["MFL", "UITASBNK"]
-new_code = ["EPIGRAL", "EQUITASBNK"]
+from constants import username, password, old_code, new_code
 week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 sector = {}
 marcap = {}
