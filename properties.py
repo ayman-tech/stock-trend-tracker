@@ -9,3 +9,4 @@ password = ""
 
 old_code = ["MFL", "UITASBNK"]
 new_code = ["EPIGRAL", "EQUITASBNK"]
+reject = ["Tobacco"]
