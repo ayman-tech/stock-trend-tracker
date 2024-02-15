@@ -11,7 +11,7 @@ import datetime
 import json
 import sys
 
-from constants import username, password, old_code, new_code
+from constants import username, password, old_code, new_code, reject
 week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 sector = {}
 marcap = {}
@@ -99,8 +99,7 @@ def search(name):
 		except:
 			# Its a bank
 			return False
-	if sales.find_element(By.TAG_NAME,"td").text!="YOY Sales Growth %":		# Latest Patch
-		time.sleep(1)
+	if sales.find_element(By.TAG_NAME,"td").text!="YOY Sales Growth %":
 		print("Had to rerun sales")
 		try:
 			driver.find_element(By.XPATH, "//*[@id='quarters']/div[3]/table/tbody/tr[1]/td[1]/button").send_keys('\n')#click()
@@ -190,7 +189,8 @@ def start(flag):
 		del ele
 
 	# add nse code to database
-	xtra= []
+	errored= []
+	rejected = []
 	for y in table:
 		driver.get(y[0])
 		time.sleep(1)
@@ -201,7 +201,7 @@ def start(flag):
 				code = driver.find_element(By.CLASS_NAME, "stock_descriptioninfo__YJ1DH").find_elements(By.TAG_NAME, "li")[1].find_element(By.TAG_NAME, "span").text
 			y.append(code)
 			cap = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[0].text
-			if(cap==""):	# Latest patch
+			if(cap==""):
 				time.sleep(2)
 				cap = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[0].text
 				print("Had to rerun cap")
@@ -210,11 +210,11 @@ def start(flag):
 					cap = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[0].text
 			y.append(cap)
 			sec = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[1].text
-			if(sec==""):	# Latest patch
+			if(sec==""):
 				time.sleep(2)
 				sec = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[1].text
 				print("Had to rerun sec")
-				if(sec==""):	# Latest patch
+				if(sec==""):
 					time.sleep(3)
 					sec = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[1].text
 			if sec=="":
@@ -235,8 +235,18 @@ def start(flag):
 		except:
 			print("Cant find NSE code of " + y[0])
 			driver.get_screenshot_as_file("mint.png")
-			xtra.append(y[1])
+			errored.append(y[1])
 			continue
+		# reject sectors
+		flag2 = False
+		for word in reject:
+			if word in y[5]:
+				rejected.append(y[1])
+				flag2 = True
+				break
+		if flag2:
+			continue
+		# search screener for code
 		try:
 			if search(y[3]):
 				print(y[3].ljust(10) +"\t"+ y[2].ljust(4) +"\t"+ y[4].ljust(10) + y[5])
@@ -244,20 +254,11 @@ def start(flag):
 		except Exception as e :
 			print(str(e) +"\n"+ driver.current_url)
 			driver.get_screenshot_as_file("screener.png")
-	del count
-
-	# screen the database
-	#try:
-		#for y in table:
-			#if(len(y)==6 and search(y[3])):
-				#print(y[3].ljust(10) +"\t"+ y[2].ljust(4) +"\t"+ y[4].ljust(10) + y[5])
-				#file1.write(y[3].ljust(10) +"\t"+ y[2].ljust(10) +"\t"+ y[1].ljust(4) + "\n")
-			#time.sleep(3)
-	#except Exception as error :
-		#print(error)
-		#print(driver.current_url)
-		#driver.get_screenshot_as_file("screenshot.png")
-	print(xtra)
+	
+	del count, flag2
+	print(errored)
+	print("Discarded :")
+	print(rejected)
 	file1.write(datetime.datetime.now().strftime("\n\n" + "%Y-%m-%d %H:%M:%S"))
 	file1.close()
 
