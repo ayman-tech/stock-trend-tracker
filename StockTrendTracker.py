@@ -11,7 +11,7 @@ import datetime
 import json
 import sys
 
-from constants import username, password, old_code, new_code, reject
+from properties import username, password, old_code, new_code, reject
 week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 sector = {}
 marcap = {}
