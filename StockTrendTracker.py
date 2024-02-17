@@ -307,8 +307,15 @@ def print_sector_cap(flag1):
 	# read data
 	day = datetime.datetime.today().weekday()
 	json_data = []
-	with open('data.json') as json_file:
-		json_data = json.load(json_file)
+	try:
+		json_file = open('data.json')
+	except:
+		file2 = open("data.json", "w")
+		file2.write("[[], [], [], [], []]")
+		file2.close()
+		json_file = open('data.json')
+	json_data = json.load(json_file)
+	json_file.close()
 	# format data
 	temp = []
 	temp.append(marcap)
