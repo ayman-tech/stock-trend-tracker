@@ -89,7 +89,9 @@ def search(name):
 		bl=0
 	elif( float(driver.find_element(By.XPATH, "//*[@id='top-ratios']/li[18]/span[2]/span").text) >= 1 ):
 		bl=0
-
+	elif( driver.find_element(By.XPATH, "//*[@id='top-ratios']/li[4]/span[2]").text == "" ):
+		bl=0	# p/e ratio not present
+	
 	if(bl==0):
 		if debug : print("	D : Ratio Conditions Failed. Rejected")
 		return False
