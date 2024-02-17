@@ -13,6 +13,7 @@ import sys
 
 from properties import username, password, old_code, new_code, reject
 week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+debug = False
 sector = {}
 marcap = {}
 
@@ -40,6 +41,11 @@ def main():
 		choice = input(" Choose selection: ")
 	else:
 		choice = sys.argv[1]
+
+	if choice[0] == 'd':
+		debug = True
+		print("\n  D : Debug Mode ON")
+		choice = choice[1:]
 	if choice=="1" :
 		start(1)
 		start(0)
@@ -61,22 +67,22 @@ def main():
 
 
 def search(name):
-	#print(".")
-
+	if debug : print("\n  D : Screening " + name)
 	if name in old_code:
 		name = new_code[old_code.index(name)]
+		if debug : print("	D : Change code to " + name)
 	driver.get("https://www.screener.in/company/"+name+"/consolidated/")
 	time.sleep(2)
 	bl = 1
 	try:
-		# check for YoY Quat Sales
 		if(driver.find_element(By.XPATH, "//*[@id='top-ratios']/li[19]/span[2]").text=="%" or driver.find_element(By.XPATH,"//*[@id='top-ratios']/li[16]/span[2]/span").text==""):
+			if debug : print("	D : YoY Qtr Sales ratio not found. Rejected")
 			raise Exception
 	except:
 		#time.sleep(2)
 		driver.get("https://www.screener.in/company/"+name+"/")
 		time.sleep(2)
-		#print("going to standalone " + name)
+		if debug : print("	D : Going to Standalone")
 	if( float(driver.find_element(By.XPATH, "//*[@id='top-ratios']/li[16]/span[2]/span").text) >= 1 ):
 		bl=0
 	elif( float(driver.find_element(By.XPATH, "//*[@id='top-ratios']/li[17]/span[2]/span").text) >= 1 ):
@@ -85,6 +91,7 @@ def search(name):
 		bl=0
 
 	if(bl==0):
+		if debug : print("	D : Ratio Conditions Failed. Rejected")
 		return False
 
 	try:
@@ -92,26 +99,29 @@ def search(name):
 		time.sleep(3)		# make it 2 if slow
 		sales = driver.find_element(By.XPATH, "//*[@id='quarters']/div[3]/table/tbody/tr[2]")
 	except:
+		if debug : print("	D : Checking next table")
 		try:
 			driver.find_element(By.XPATH, "//*[@id='quarters']/div[2]/table/tbody/tr[1]/td[1]/button").send_keys('\n')#click()
 			time.sleep(3)		# make it 2 if slow
 			sales = driver.find_element(By.XPATH, "//*[@id='quarters']/div[2]/table/tbody/tr[2]")
 		except:
-			# Its a bank
+			if debug : print("	D : Its a bank")
 			return False
 	if sales.find_element(By.TAG_NAME,"td").text!="YOY Sales Growth %":
-		print("Had to rerun sales")
+		if debug : print("	D : Had to rerun sales")
 		try:
 			driver.find_element(By.XPATH, "//*[@id='quarters']/div[3]/table/tbody/tr[1]/td[1]/button").send_keys('\n')#click()
 			time.sleep(3)		# make it 2 if slow
 			sales = driver.find_element(By.XPATH, "//*[@id='quarters']/div[3]/table/tbody/tr[2]")
 		except:
+			if debug : print("	D : Checking next table")
 			try:
 				driver.find_element(By.XPATH, "//*[@id='quarters']/div[2]/table/tbody/tr[1]/td[1]/button").send_keys('\n')#click()
 				time.sleep(3)		# make it 2 if slow
 				sales = driver.find_element(By.XPATH, "//*[@id='quarters']/div[2]/table/tbody/tr[2]")
 			except:
-				return False	# Its a bank
+				if debug : print("	D : Its a bank")
+				return False
 	sales_list = []
 	for x in range(1,len(sales.find_elements(By.TAG_NAME,"td"))):
 		if(sales.find_elements(By.TAG_NAME, "td")[x].text != ""):
@@ -119,12 +129,15 @@ def search(name):
 	del(sales)
 	for x in sales_list[-4:]:
 		if(x=="" or x=="0.00" or x=="-0.00"):
+			if debug : print("	D : No growth in Sales. Rejected")
 			return False
 		if(x[-1]!='%'):
+			if debug : print("	D : ERROR Not Percentage " + name + " " + x)
 			raise Exception("Not percentage "+ name +" "+ x)
 		x=x.replace(",","")
 		x=x.replace("%","")
 		if(float(x)<1):
+			if debug : print("	D : Sales growth too low. Rejected")
 			bl=0
 	#print(*sales_list, sep='  ')
 	del(sales_list)
@@ -137,11 +150,13 @@ def start(flag):
 	print("|                                 |")
 	if(flag==0):
 		file1 = open("top_gainers.txt", "w")
+		if debug : print("	D : top gainers file open : " + ("Failure" if file1.closed else "Success"))
 		file1.write("\n\tTop Gainers \n\n")
 		url = "https://mintgenie.livemint.com/markets/details/top_gainers"
 		print("|           Top Gainers           |")
 	else:
 		file1 = open("top_losers.txt", "w")
+		if debug : print("	D : top losers file open : " + ("Failure" if file1.closed else "Success"))
 		file1.write("\n\tTop Losers \n\n")
 		url = "https://mintgenie.livemint.com/markets/details/top_losers"
 		print("|            Top Loser            |")
@@ -150,6 +165,7 @@ def start(flag):
 
 	# setup the list
 	driver.get(url)
+	if debug : print("	D : Open url " + url)
 	time.sleep(3)
 	driver.find_element(By.XPATH, "//*[@id='__next']/main/div[3]/div[3]/div/div/div/div["+str(2+flag)+"]/div/div/div[1]/div/ul/li[2]/div/label").click()
 	driver.find_element(By.XPATH, "//*[@id='__next']/main/div[3]/div[3]/div/div/div/div["+str(2+flag)+"]/div/div/div[2]/div[1]/div/div/span[2]").click()
@@ -164,6 +180,7 @@ def start(flag):
 		for x in driver.find_elements(By.CLASS_NAME, "load-more-btn") :
 			if(x.text == "Load More"):
 				x.find_element(By.TAG_NAME, "button").send_keys("\n")
+				if debug : print("	D : Load More clicked")
 				tick= True
 				time.sleep(2)
 
@@ -171,6 +188,7 @@ def start(flag):
 	count=0
 	table=[]
 	time.sleep(2)
+	if debug : print("	D : Setting up list of stocks")
 	for x in driver.find_element(By.XPATH,"//*[@id='__next']/main/div[3]/div[3]/div/div/div/div["+str(2+flag)+"]/div/div/div[3]/div[1]/ul").find_elements(By.TAG_NAME, "li"):
 		count = count+1
 		if(count==1):
@@ -184,7 +202,7 @@ def start(flag):
 				del ele
 				break
 		except:
-			print("empty change of "+ ele[1])
+			if debug : print("	D : No change for " + ele[1])
 		table.append(ele)
 		del ele
 
@@ -198,15 +216,18 @@ def start(flag):
 			code = driver.find_element(By.CLASS_NAME, "stock_descriptioninfo__YJ1DH").find_elements(By.TAG_NAME, "li")[1].find_element(By.TAG_NAME, "span").text
 			if(code == ""):
 				time.sleep(5)
+				if debug : print("	D : NSE code not found. Retrying")
 				code = driver.find_element(By.CLASS_NAME, "stock_descriptioninfo__YJ1DH").find_elements(By.TAG_NAME, "li")[1].find_element(By.TAG_NAME, "span").text
 			y.append(code)
 			cap = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[0].text
 			if(cap==""):
 				time.sleep(2)
+				if debug : print("	D : Cap not found. Retrying")
 				cap = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[0].text
 				print("Had to rerun cap")
 				if(cap==""):
 					time.sleep(5)
+					if debug : print("	D : Cap not found again. Retrying again")
 					cap = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[0].text
 			y.append(cap)
 			sec = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[1].text
@@ -216,12 +237,14 @@ def start(flag):
 				print("Had to rerun sec")
 				if(sec==""):
 					time.sleep(3)
+					if debug : print("	D : Sector not found. Retrying")
 					sec = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[1].text
 			if sec=="":
 				print("No sec for "+ y[0])
+				if debug : print("	D : No sector for " + y[0])
 				sec = "Miscellaneous"
 			if cap == "":
-				print("No cap for "+ y[0])
+				if debug : print("	D : No cap for "+ y[0])
 			y.append(sec)
 			if cap in marcap:
 				marcap[cap] = round(marcap[cap] + float(y[2]), 2)
@@ -233,7 +256,7 @@ def start(flag):
 				sector[sec] = float("{:.2f}".format(float(y[2])))
 			del cap, sec
 		except:
-			print("Cant find NSE code of " + y[0])
+			if debug : print("	D : Cant find NSE code of " + y[0] + ". Saving ss")
 			driver.get_screenshot_as_file("mint.png")
 			errored.append(y[1])
 			continue
@@ -245,6 +268,7 @@ def start(flag):
 				flag2 = True
 				break
 		if flag2:
+			if debug : print("	D : Rejected Sector. Dont Add")
 			continue
 		# search screener for code
 		try:
@@ -253,12 +277,12 @@ def start(flag):
 				file1.write(y[3].ljust(10) +"\t"+ y[2].ljust(10) +"\t"+ y[1].ljust(4) + "\n")
 		except Exception as e :
 			print(str(e) +"\n"+ driver.current_url)
+			if debug : print("	D : ERROR : " + str(e) +"\n"+ driver.current_url + ". Saving ss")
 			driver.get_screenshot_as_file("screener.png")
 	
 	del count, flag2
-	print(errored)
-	print("Discarded :")
-	print(rejected)
+	if debug : print("	D : Error Processing " + errored)
+	if debug : print("	D : Discarded " + rejected)
 	file1.write(datetime.datetime.now().strftime("\n\n" + "%Y-%m-%d %H:%M:%S"))
 	file1.close()
 
