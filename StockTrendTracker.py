@@ -1,17 +1,13 @@
-from bs4 import BeautifulSoup as bs
 from pprint import pprint
-import requests
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 import time
-import os
 import datetime
 import json
 import sys
+#from selenium.webdriver.common.keys import Keys
 
-from properties import username, password, old_code, new_code, reject
+from properties import username, password, old_code, new_code, reject, watchlist
 week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 debug = False
 sector = {}
@@ -19,9 +15,6 @@ marcap = {}
 
 options = webdriver.ChromeOptions()
 options.add_argument("--headless")
-options.add_argument("--no-sandbox")
-# chrome stores profiles
-options.add_argument(r"--user-data-dir=/home/ayman/.config/google-chrome")
 options.add_argument("--window-size=1920,1080")
 driver = webdriver.Chrome(options=options)
 driver.get("https://www.screener.in/login/?")
@@ -36,12 +29,28 @@ def main():
 	#os.system('clear')
 	marcap={}
 	sector={}
+	news_list = []
+	global debug
+	print("\n Watchlist \n")
+	if len(watchlist) :
+		for watch in watchlist :
+			driver.get("https://finance.yahoo.com/quote/" + watch + ".NS")
+			time.sleep(2)
+			# get % change from google finance
+			try:
+				watch_change = driver.find_element(By.XPATH,
+					"//*[@id=\"nimbus-app\"]/section/section/section/article/section[1]/div[2]/div[1]/section/div/section/div[1]/fin-streamer[3]").text
+			except:
+				print("\n  E :  ERROR yahoo fin element not found")
+				break;
+			print(watch.ljust(10) + "    " + watch_change[1:-1])
+	print("\ncheck")
 	if len(sys.argv) < 2:
 		print("\n What data do you want:\n\n  1. Run\n  2. Analyze\n  3. Top Gainers\n  4. Top Losers\n  5. Clear Data\n  6. Exit\n")
 		choice = input(" Choose selection: ")
 	else:
 		choice = sys.argv[1]
-
+	print("choice : "+choice);
 	if choice[0] == 'd':
 		debug = True
 		print("\n  D : Debug Mode ON")
@@ -226,7 +235,6 @@ def start(flag):
 				time.sleep(2)
 				if debug : print("	D : Cap not found. Retrying")
 				cap = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[0].text
-				print("Had to rerun cap")
 				if(cap==""):
 					time.sleep(5)
 					if debug : print("	D : Cap not found again. Retrying again")
@@ -235,14 +243,13 @@ def start(flag):
 			sec = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[1].text
 			if(sec==""):
 				time.sleep(2)
+				if debug : print("Sector not found. Retrying")
 				sec = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[1].text
-				print("Had to rerun sec")
 				if(sec==""):
 					time.sleep(3)
 					if debug : print("	D : Sector not found. Retrying")
 					sec = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[1].text
 			if sec=="":
-				print("No sec for "+ y[0])
 				if debug : print("	D : No sector for " + y[0])
 				sec = "Miscellaneous"
 			if cap == "":
