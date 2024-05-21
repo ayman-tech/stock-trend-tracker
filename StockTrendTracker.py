@@ -86,12 +86,18 @@ def search(name):
 	try:
 		if(driver.find_element(By.XPATH, "//*[@id='top-ratios']/li[19]/span[2]").text=="%" or driver.find_element(By.XPATH,"//*[@id='top-ratios']/li[16]/span[2]/span").text==""):
 			if debug : print("	D : YoY Qtr Sales ratio not found. Rejected")
-			raise Exception
+			return
 	except:
 		#time.sleep(2)
 		driver.get("https://www.screener.in/company/"+name+"/")
 		time.sleep(2)
-		if debug : print("	D : Going to Standalone")
+		try:
+			if(driver.find_element(By.XPATH, "//*[@id='top-ratios']/li[19]/span[2]").text=="%" or driver.find_element(By.XPATH,"//*[@id='top-ratios']/li[16]/span[2]/span").text==""):
+				if debug : print("	D : YoY Qtr Sales ratio not found. Rejected")
+				return
+			if debug : print("	D : Going to Standalone")
+		except:
+			return
 	if( float(driver.find_element(By.XPATH, "//*[@id='top-ratios']/li[16]/span[2]/span").text) >= 1 ):
 		bl=0
 	elif( float(driver.find_element(By.XPATH, "//*[@id='top-ratios']/li[17]/span[2]/span").text) >= 1 ):
