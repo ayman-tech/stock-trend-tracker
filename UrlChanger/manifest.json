@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "URL Changer",
+  "version": "1.0",
+  "description": "Opens a new tab and changes the URL every 10 seconds from a list of URLs.",
+  "permissions": ["tabs", "storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
+

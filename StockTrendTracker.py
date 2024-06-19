@@ -226,7 +226,7 @@ def start(flag):
 	# add nse code to database
 	errored= []
 	rejected = []
-	file3 = open("UrlChanger/urls.txt", "w")
+	if flag==1 : file3 = open("UrlChanger/urls.txt", "w")
 	for y in table:
 		driver.get(y[0])
 		time.sleep(1)
@@ -291,7 +291,7 @@ def start(flag):
 			if search(y[3]):
 				print(y[3].ljust(10) +"\t"+ y[2].ljust(4) +"\t"+ y[4].ljust(10) + y[5])
 				file1.write(y[3].ljust(10) +"\t"+ y[2].ljust(10) +"\t"+ y[1].ljust(4) + "\n")
-				file3.write("https://in.tradingview.com/chart/?symbol=NSE%3A"+y[3] + " ")
+				if flag==1 : file3.write("https://in.tradingview.com/chart/?symbol=NSE%3A"+y[3] + " ")
 		except Exception as e :
 			print(str(e) +"\n"+ driver.current_url)
 			if debug : print("	D : ERROR : " + str(e) +"\n"+ driver.current_url + ". Saving ss")
@@ -302,7 +302,7 @@ def start(flag):
 	if debug : print("	D : Discarded " + rejected)
 	file1.write(datetime.datetime.now().strftime("\n\n" + "%Y-%m-%d %H:%M:%S"))
 	file1.close()
-	file3.close()
+	if flag==1 : file3.close()
 
 
 def print_sector_cap(flag1):
