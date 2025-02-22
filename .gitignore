@@ -1,0 +1,8 @@
+top_gainers.txt
+top_losers.txt
+xpaths.txt
+properties.py
+__pycache__/
+*.png
+data.json
+*/urls.txt
