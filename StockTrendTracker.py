@@ -5,6 +5,7 @@ import time
 import datetime
 import json
 import sys
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 #from selenium.webdriver.common.keys import Keys
 
 from properties import username, password, old_code, new_code, reject, watchlist
@@ -14,8 +15,9 @@ sector = {}
 marcap = {}
 
 options = webdriver.ChromeOptions()
-options.add_argument("--headless")
+options.add_argument("--headless=new")
 options.add_argument("--window-size=1920,1080")
+options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36")
 driver = webdriver.Chrome(options=options)
 driver.get("https://www.screener.in/login/?")
 try:
@@ -31,26 +33,26 @@ def main():
 	sector={}
 	news_list = []
 	global debug
-	print("\n Watchlist \n")
-	if len(watchlist) :
-		for watch in watchlist :
-			driver.get("https://finance.yahoo.com/quote/" + watch + ".NS")
-			time.sleep(2)
-			# get % change from google finance
-			try:
-				watch_change = driver.find_element(By.XPATH,
-					"//*[@id=\"nimbus-app\"]/section/section/section/article/section[1]/div[2]/div[1]/section/div/section/div[1]/fin-streamer[3]").text
-			except:
-				print("\n  E :  ERROR yahoo fin element not found")
-				break;
-			print(watch.ljust(10) + "    " + watch_change[1:-1])
+	#print("\n Watchlist \n")
+	#if len(watchlist) :
+		#for watch in watchlist :
+			#driver.get("https://finance.yahoo.com/quote/" + watch + ".NS")
+			#time.sleep(2)
+			## get % change from google finance
+			#try:
+				#watch_change = driver.find_element(By.XPATH,
+					#"//*[@id=\"nimbus-app\"]/section/section/section/article/section[1]/div[2]/div[1]/section/div/section/div[1]/fin-streamer[3]").text
+			#except:
+				#print("\n  E :  ERROR yahoo fin element not found")
+				#break;
+			#print(watch.ljust(10) + "    " + watch_change[1:-1])
 	print("\ncheck")
 	if len(sys.argv) < 2:
 		print("\n What data do you want:\n\n  1. Run\n  2. Analyze\n  3. Top Gainers\n  4. Top Losers\n  5. Clear Data\n  6. Exit\n")
 		choice = input(" Choose selection: ")
 	else:
 		choice = sys.argv[1]
-	print("choice : "+choice);
+	print("choice : "+choice)
 	if choice[0] == 'd':
 		debug = True
 		print("\n  D : Debug Mode ON")
@@ -73,10 +75,13 @@ def main():
 		exit()
 
 	del(choice)
+	input("\n Press enter to exit")
 
 
 def search(name):
 	if debug : print("\n  D : Screening " + name)
+	if name in reject:
+		return False
 	if name in old_code:
 		name = new_code[old_code.index(name)]
 		if debug : print("	D : Change code to " + name)
@@ -165,139 +170,121 @@ def start(flag):
 	global marcap, sector
 	print("\n\n+---------------------------------+")
 	print("|                                 |")
+	url = "https://www.niftyindices.com/market-data/top-gainers-losers"
 	if(flag==0):
 		file1 = open("top_gainers.txt", "w")
 		if debug : print("	D : top gainers file open : " + ("Failure" if file1.closed else "Success"))
 		file1.write("\n\tTop Gainers \n\n")
-		url = "https://mintgenie.livemint.com/markets/details/top_gainers"
 		print("|           Top Gainers           |")
 	else:
 		file1 = open("top_losers.txt", "w")
 		if debug : print("	D : top losers file open : " + ("Failure" if file1.closed else "Success"))
 		file1.write("\n\tTop Losers \n\n")
-		url = "https://mintgenie.livemint.com/markets/details/top_losers"
 		print("|            Top Loser            |")
 	print("|                                 |")
 	print("+---------------------------------+\n\n")
 
 	# setup the list
-	driver.get(url)
+	try:
+		driver.get(url)
+	except:
+		print(" Error : Timeout for "+ url)
+		driver.get_screenshot_as_file("nseindia.png")
+		return
 	if debug : print("	D : Open url " + url)
 	time.sleep(3)
-	driver.find_element(By.XPATH, "//*[@id='__next']/main/div[3]/div[3]/div/div/div/div["+str(2+flag)+"]/div/div/div[1]/div/ul/li[2]/div/label").click()
-	driver.find_element(By.XPATH, "//*[@id='__next']/main/div[3]/div[3]/div/div/div/div["+str(2+flag)+"]/div/div/div[2]/div[1]/div/div/span[2]").click()
-	time.sleep(2)
-	driver.find_element(By.XPATH, "/html/body/div[2]/div/div/div/div[2]/div[1]/div/div/div[3]/div").click()
-	time.sleep(2)
+	if(flag==1):
+		driver.find_element(By.XPATH, "//*[@id='mainInner_C002_Col00']/div[3]/div/div[3]/div/ul/li[2]/a").click()
+		time.sleep(5)
+	driver.find_element(By.XPATH, "/html/body/form/div[3]/div/div/div/div[2]/div/div/div/div/div/div[3]/div/div[1]/a").click()
+	time.sleep(7)
+	driver.find_element(By.XPATH, "//*[@id='mCSB_1_container']/li[5]").click()
+	time.sleep(10)
 
 	# Load more
-	tick = True
-	while tick:
-		tick = False
-		for x in driver.find_elements(By.CLASS_NAME, "load-more-btn") :
-			if(x.text == "Load More"):
-				x.find_element(By.TAG_NAME, "button").send_keys("\n")
-				if debug : print("	D : Load More clicked")
-				tick= True
-				time.sleep(2)
+	#tick = True
+	#while tick:
+		#tick = False
+		#for x in driver.find_elements(By.CLASS_NAME, "load-more-btn") :
+			#if(x.text == "Load More"):
+				#x.find_element(By.TAG_NAME, "button").send_keys("\n")
+				#if debug : print("	D : Load More clicked")
+				#tick= True
+				#time.sleep(2)
 
 	# setup database
 	count=0
 	table=[]
-	time.sleep(2)
+	time.sleep(5)
 	if debug : print("	D : Setting up list of stocks")
-	for x in driver.find_element(By.XPATH,"//*[@id='__next']/main/div[3]/div[3]/div/div/div/div["+str(2+flag)+"]/div/div/div[3]/div[1]/ul").find_elements(By.TAG_NAME, "li"):
+	if(flag==1):
+		xpath = "//*[@id='stockwatchtableLosers']/tbody"
+	else:
+		xpath = "//*[@id='stockwatchtableGainers']/tbody"
+	for x in driver.find_element(By.XPATH,"//*[@id='stockwatchtableLosers']/tbody").find_elements(By.TAG_NAME, "tr"):
 		count = count+1
-		if(count==1):
-			continue
-		ele =[]		# ele[ url, name, change, code, cap, sector]
-		ele.append(x.find_element(By.TAG_NAME, "a").get_attribute("href"))
-		ele.append(x.find_element(By.CLASS_NAME, "company-name").text)
-		ele.append(x.find_element(By.CLASS_NAME, "list-percentage").text.replace("%",""))
+		#elif count>20:
+			#break
+		ele =[]		# ele[code, change]
+		ele.append(x.find_elements(By.TAG_NAME, "td")[0].text)
+		ele.append(x.find_elements(By.TAG_NAME, "td")[1].text.replace("%",""))
 		try:
-			if((float(ele[2]) > -1.0 and flag==1) or (float(ele[2]) < 1.0 and flag==0)):
-				del ele
-				break
+			if((float(ele[1]) <= -1.0 and flag==1) or (float(ele[1]) >= 1.0 and flag==0)):
+				table.append(ele)
 		except:
-			if debug : print("	D : No change for " + ele[1])
-		table.append(ele)
+			if debug : print("	D : No change for " + ele[0])
 		del ele
 
-	# add nse code to database
+	# add cap & sector
 	errored= []
 	rejected = []
 	if flag==1 : file3 = open("UrlChanger/urls.txt", "w")
 	for y in table:
-		driver.get(y[0])
-		time.sleep(1)
-		try:
-			code = driver.find_element(By.CLASS_NAME, "stock_descriptioninfo__YJ1DH").find_elements(By.TAG_NAME, "li")[1].find_element(By.TAG_NAME, "span").text
-			if(code == ""):
-				time.sleep(5)
-				if debug : print("	D : NSE code not found. Retrying")
-				code = driver.find_element(By.CLASS_NAME, "stock_descriptioninfo__YJ1DH").find_elements(By.TAG_NAME, "li")[1].find_element(By.TAG_NAME, "span").text
-			y.append(code)
-			cap = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[0].text
-			if(cap==""):
-				time.sleep(2)
-				if debug : print("	D : Cap not found. Retrying")
-				cap = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[0].text
-				if(cap==""):
-					time.sleep(5)
-					if debug : print("	D : Cap not found again. Retrying again")
-					cap = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[0].text
-			y.append(cap)
-			sec = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[1].text
-			if(sec==""):
-				time.sleep(2)
-				if debug : print("Sector not found. Retrying")
-				sec = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[1].text
-				if(sec==""):
-					time.sleep(3)
-					if debug : print("	D : Sector not found. Retrying")
-					sec = driver.find_element(By.CLASS_NAME, "stock_descriptionlist__1TlJM").find_elements(By.TAG_NAME, "li")[1].text
-			if sec=="":
-				if debug : print("	D : No sector for " + y[0])
-				sec = "Miscellaneous"
-			if cap == "":
-				if debug : print("	D : No cap for "+ y[0])
-			y.append(sec)
-			if cap in marcap:
-				marcap[cap] = round(marcap[cap] + float(y[2]), 2)
-			else:
-				marcap[cap] = float("{:.2f}".format(float(y[2])))		# round(float(y[2]),2)
-			if sec in sector:
-				sector[sec] = round(sector[sec] + float(y[2]), 2)
-			else:
-				sector[sec] = float("{:.2f}".format(float(y[2])))
-			del cap, sec
-		except:
-			if debug : print("	D : Cant find NSE code of " + y[0] + ". Saving ss")
-			driver.get_screenshot_as_file("mint.png")
-			errored.append(y[1])
-			continue
-		# reject sectors
-		flag2 = False
-		for word in reject:
-			if word in y[5]:
-				rejected.append(y[1])
-				flag2 = True
-				break
-		if flag2:
-			if debug : print("	D : Rejected Sector. Dont Add")
-			continue
+		#driver.get("https://www.nseindia.com/get-quotes/equity?symbol=" + y[0])
+		#time.sleep(5)
+		#try:
+			#sec = driver.find_element(By.XPATH,"//*[@id='peers']/div[1]/div[1]/p/a[1]")
+			#y.append(sec)
+
+			#if sec=="":
+				#if debug : print("	D : No sector for " + y[0])
+				#sec = "Miscellaneous"
+			#y.append(sec)
+
+			#if sec in sector:
+				#sector[sec] = round(sector[sec] + float(y[2]), 2)
+			#else:
+				#sector[sec] = float("{:.2f}".format(float(y[2])))
+			#del sec
+		#except:
+			#if debug : print("	D : Cant find sector for " + y[0] + ". Saving ss")
+			#driver.get_screenshot_as_file("quote.png")
+			#errored.append(y[0])
+			#continue
+
+		## reject sectors
+		#flag2 = False
+		#for word in reject:
+			#if word in y[2]:
+				#rejected.append(y[0])
+				#flag2 = True
+				#break
+		#if flag2:
+			#if debug : print("	D : Rejected Sector "+ y[2])
+			#continue
+
 		# search screener for code and write url
 		try:
-			if search(y[3]):
-				print(y[3].ljust(10) +"\t"+ y[2].ljust(4) +"\t"+ y[4].ljust(10) + y[5])
-				file1.write(y[3].ljust(10) +"\t"+ y[2].ljust(10) +"\t"+ y[1].ljust(4) + "\n")
-				if flag==1 : file3.write("https://in.tradingview.com/chart/?symbol=NSE%3A"+y[3] + " ")
+			if search(y[0]):
+				print(y[0].ljust(10) +"\t"+ y[1].ljust(4))# +"\t"+ y[4].ljust(10) + y[5])
+				file1.write(y[0].ljust(10) +"\t"+ y[1].ljust(10) + "\n")# +"\t"+ y[1].ljust(4) + "\n")
+				if flag==1 : file3.write("https://in.tradingview.com/chart/?symbol=NSE%3A"+y[0] + " ")
 		except Exception as e :
 			print(str(e) +"\n"+ driver.current_url)
 			if debug : print("	D : ERROR : " + str(e) +"\n"+ driver.current_url + ". Saving ss")
 			driver.get_screenshot_as_file("screener.png")
 	
-	del count, flag2
+	del count
 	if debug : print("	D : Error Processing " + errored)
 	if debug : print("	D : Discarded " + rejected)
 	file1.write(datetime.datetime.now().strftime("\n\n" + "%Y-%m-%d %H:%M:%S"))
